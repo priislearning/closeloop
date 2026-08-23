@@ -135,20 +135,23 @@ streamlit run app/main.py
 
 ---
 
-## 🔗 Connecting to GitHub
-
-To push this repository to your GitHub account:
+## 🔗 GitHub Repository
+This repository is hosted on GitHub:
+👉 **[https://github.com/priislearning/closeloop](https://github.com/priislearning/closeloop)**
 
 ```bash
-# Initialize and commit locally
-git init
-git add .
-git commit -m "feat: initial release of CloseLoop AI Revenue Recovery Agent"
+# Clone the repository
+git clone https://github.com/priislearning/closeloop.git
+cd closeloop
 
-# Add your GitHub remote repository and push
-git branch -M main
-git remote add origin https://github.com/<your-username>/closeloop.git
-git push -u origin main
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests
+pytest tests/ -v
+
+# Launch dashboard
+streamlit run app/main.py
 ```
 
 ---
