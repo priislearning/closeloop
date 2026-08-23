@@ -2,29 +2,38 @@
   "dataset_size": 200,
   "total_revenue_at_risk": 4853897.82,
   "closeloop": {
-    "total_recovered": 1012035.26,
-    "recovery_rate_pct": 20.85,
+    "total_recovered": 825313.35,
+    "recovery_rate_pct": 17.0,
     "contacts_expended": 23,
     "silent_retries": 35,
     "fatigue_score": 40.1,
     "compliance_violations": 0,
     "stopped_by_restraint": 110,
-    "efficiency_inr_per_contact": 44001.53
+    "efficiency_inr_per_contact": 35883.19
   },
-  "naive_baseline": {
+  "naive_equalized_budget": {
+    "total_recovered": 12601.14,
+    "recovery_rate_pct": 0.26,
+    "contacts_expended": 23,
+    "fatigue_score": 57.5,
+    "compliance_violations": 2,
+    "efficiency_inr_per_contact": 547.88
+  },
+  "naive_unconstrained_spam": {
     "total_recovered": 2118323.04,
     "recovery_rate_pct": 43.64,
     "contacts_expended": 600,
     "fatigue_score": 1500.0,
-    "compliance_violations": 72,
+    "compliance_violations": 74,
     "efficiency_inr_per_contact": 3530.54
   },
   "differentiation": {
     "contact_fatigue_avoided": 1459.9,
     "fatigue_reduction_pct": 97.3,
     "contact_attempts_saved": 577,
-    "compliance_violations_avoided": 72,
-    "efficiency_multiplier": 12.46
+    "compliance_violations_avoided": 74,
+    "efficiency_multiplier_vs_unconstrained": 10.16,
+    "revenue_win_under_equal_budget_pct": 6449.5
   },
   "tradeoff_curve": [
     {
