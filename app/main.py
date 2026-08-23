@@ -14,10 +14,19 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+import importlib
+
 # Add project root to sys.path
 root_dir = Path(__file__).resolve().parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
+
+# Cleanly reload evaluate module if previously cached in memory
+if "src.evaluate" in sys.modules:
+    try:
+        importlib.reload(sys.modules["src.evaluate"])
+    except Exception:
+        pass
 
 from src.ingestion import UnifiedRecoveryEvent, ingest_event
 from src.diagnosis_engine import DiagnosisEngine
