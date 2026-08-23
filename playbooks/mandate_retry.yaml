@@ -1,0 +1,69 @@
+playbook_id: mandate_retry
+name: Mandate & Recurring Payment Retry Sequencer
+category: mandate_retry
+description: >
+  Autonomous intelligent retry sequencer for UPI Autopay, e-NACH, and bank downtime events.
+  Uses silent retries during optimal bank traffic windows and re-authorization nudges for expired mandates.
+
+eligible_root_causes:
+  - BANK_DOWNTIME
+  - MANDATE_LAPSE
+  - MANDATE_EXPIRED
+  - INSUFFICIENT_FUNDS
+
+constraints:
+  min_trust_score: 0.2
+  max_contact_attempts_allowed: 2
+  cooldown_hours: 4
+  quiet_hours:
+    enabled: true
+    start_hour: 9    # 09:00 AM in customer's local timezone
+    end_hour: 19     # 07:00 PM in customer's local timezone
+  circuit_breaker:
+    category: mandate_retry
+    max_failure_rate: 0.15
+    max_opt_out_rate: 0.05
+    rolling_window_size: 20
+
+fatigue_scoring:
+  silent_retry_fatigue: 0.0      # Zero customer friction
+  whatsapp_fatigue: 1.0
+  sms_fatigue: 1.2
+  voice_fatigue: 3.5
+
+escalation_steps:
+  - step: 1
+    root_cause_match: BANK_DOWNTIME
+    action_type: silent_retry
+    channel: backend_scheduler
+    delay_minutes: 45
+    description: "Silent retry via secondary banking gateway switch during non-peak window"
+    template: "SILENT_BACKEND_RETRY_NO_CUSTOMER_CONTACT"
+    requires_customer_interaction: false
+
+  - step: 1
+    root_cause_match: MANDATE_LAPSE
+    action_type: silent_retry
+    channel: backend_scheduler
+    delay_minutes: 120
+    description: "Re-trigger debit request after 2h pre-debit sync"
+    template: "SILENT_BACKEND_RETRY"
+    requires_customer_interaction: false
+
+  - step: 2
+    root_cause_match: MANDATE_EXPIRED
+    action_type: reauthorize_link
+    channel: whatsapp
+    delay_minutes: 15
+    description: "Send 1-tap UPI Autopay re-authorization link"
+    template: "Namaste {customer_name}, aapka {plan_name} subscription mandate renew karne ke liye 1-tap link: {reauth_url}. Thank you!"
+    requires_customer_interaction: true
+
+  - step: 2
+    root_cause_match: INSUFFICIENT_FUNDS
+    action_type: polite_sms
+    channel: sms
+    delay_minutes: 360
+    description: "Polite payment retry reminder after funds top-up window"
+    template: "Hi {customer_name}, your subscription renewal for INR {amount} couldn't complete. Retry anytime here: {retry_url} - Team Razorpay"
+    requires_customer_interaction: true

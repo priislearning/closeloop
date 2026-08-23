@@ -1,0 +1,94 @@
+{
+  "dataset_size": 200,
+  "total_revenue_at_risk": 4853897.82,
+  "closeloop": {
+    "total_recovered": 1012035.26,
+    "recovery_rate_pct": 20.85,
+    "contacts_expended": 23,
+    "silent_retries": 35,
+    "fatigue_score": 40.1,
+    "compliance_violations": 0,
+    "stopped_by_restraint": 110,
+    "efficiency_inr_per_contact": 44001.53
+  },
+  "naive_baseline": {
+    "total_recovered": 2118323.04,
+    "recovery_rate_pct": 43.64,
+    "contacts_expended": 600,
+    "fatigue_score": 1500.0,
+    "compliance_violations": 72,
+    "efficiency_inr_per_contact": 3530.54
+  },
+  "differentiation": {
+    "contact_fatigue_avoided": 1459.9,
+    "fatigue_reduction_pct": 97.3,
+    "contact_attempts_saved": 577,
+    "compliance_violations_avoided": 72,
+    "efficiency_multiplier": 12.46
+  },
+  "tradeoff_curve": [
+    {
+      "fatigue_budget_factor": 0.0,
+      "fatigue_score": 0.0,
+      "revenue_recovered": 1359091.39,
+      "recovery_rate_pct": 28.0,
+      "strategy": "CloseLoop Optimal Curve"
+    },
+    {
+      "fatigue_budget_factor": 0.2,
+      "fatigue_score": 24.0,
+      "revenue_recovered": 2019386.21,
+      "recovery_rate_pct": 41.6,
+      "strategy": "CloseLoop Optimal Curve"
+    },
+    {
+      "fatigue_budget_factor": 0.4,
+      "fatigue_score": 48.0,
+      "revenue_recovered": 2480075.46,
+      "recovery_rate_pct": 51.1,
+      "strategy": "CloseLoop Optimal Curve"
+    },
+    {
+      "fatigue_budget_factor": 0.6,
+      "fatigue_score": 72.0,
+      "revenue_recovered": 2801499.45,
+      "recovery_rate_pct": 57.7,
+      "strategy": "CloseLoop Optimal Curve"
+    },
+    {
+      "fatigue_budget_factor": 0.8,
+      "fatigue_score": 96.0,
+      "revenue_recovered": 3025757.73,
+      "recovery_rate_pct": 62.3,
+      "strategy": "CloseLoop Optimal Curve"
+    },
+    {
+      "fatigue_budget_factor": 1.0,
+      "fatigue_score": 120.0,
+      "revenue_recovered": 3182223.26,
+      "recovery_rate_pct": 65.6,
+      "strategy": "CloseLoop Optimal Curve"
+    },
+    {
+      "fatigue_budget_factor": 1.2,
+      "fatigue_score": 144.0,
+      "revenue_recovered": 3291389.63,
+      "recovery_rate_pct": 67.8,
+      "strategy": "Aggressive Diminishing Return Zone"
+    },
+    {
+      "fatigue_budget_factor": 1.5,
+      "fatigue_score": 180.0,
+      "revenue_recovered": 3396510.4,
+      "recovery_rate_pct": 70.0,
+      "strategy": "Aggressive Diminishing Return Zone"
+    },
+    {
+      "fatigue_budget_factor": 2.0,
+      "fatigue_score": 240.0,
+      "revenue_recovered": 3483641.18,
+      "recovery_rate_pct": 71.8,
+      "strategy": "Aggressive Diminishing Return Zone"
+    }
+  ]
+}

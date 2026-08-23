@@ -1,0 +1,55 @@
+playbook_id: hinglish_voice_recovery
+name: Hinglish Conversational Voice Recovery Agent
+category: hinglish_voice_recovery
+description: >
+  Dynamic Hinglish voice recovery agent for high-value failed payments and overdue receivables.
+  Adjusts conversational tone (formal vs collaborative) based on customer trust score.
+
+eligible_root_causes:
+  - FORGOT_PAYMENT
+  - CARD_EXPIRED
+  - INSUFFICIENT_FUNDS
+
+constraints:
+  min_trust_score: 0.5
+  max_contact_attempts_allowed: 1
+  cooldown_hours: 48
+  quiet_hours:
+    enabled: true
+    start_hour: 10   # 10:00 AM local time (polite voice calling start)
+    end_hour: 18     # 06:00 PM local time (RBI compliant calling cutoff)
+  circuit_breaker:
+    category: hinglish_voice_recovery
+    max_failure_rate: 0.15
+    max_opt_out_rate: 0.05
+    rolling_window_size: 15
+
+fatigue_scoring:
+  voice_fatigue: 3.5
+
+escalation_steps:
+  - step: 1
+    root_cause_match: FORGOT_PAYMENT
+    action_type: conversational_voice_call
+    channel: hinglish_voice_bot
+    delay_minutes: 60
+    description: "Personalized Hinglish voice call offering payment assistance and recording Promise-to-Pay"
+    template_high_trust: >
+      "Namaste {customer_name} ji, main Razorpay support se baat kar raha hoon.
+      Aapka INR {amount} ka payment pending dikh raha tha. Agar koi technical issue aa raha hai,
+      toh kya main aapke WhatsApp par instant payment link bhej doon ya aap date set karna chahenge?"
+    template_standard: >
+      "Hello {customer_name}, yeh call aapke pending payment of INR {amount} ke reference mein hai.
+      Aap isse hamare secure portal se clear kar sakte hain. Link aapke SMS par share kar diya gaya hai."
+    requires_customer_interaction: true
+
+  - step: 1
+    root_cause_match: CARD_EXPIRED
+    action_type: conversational_voice_call
+    channel: hinglish_voice_bot
+    delay_minutes: 120
+    description: "Hinglish voice guidance on updating expired card details securely"
+    template_standard: >
+      "Namaste {customer_name} ji, aapka registered card renew ho chuka hai.
+      Aapke account security ke liye humne ek verified card-update link WhatsApp kiya hai. Thank you!"
+    requires_customer_interaction: true

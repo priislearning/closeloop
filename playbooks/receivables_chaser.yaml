@@ -1,0 +1,59 @@
+playbook_id: receivables_chaser
+name: B2B Smart Receivables Chaser
+category: b2b_receivables
+description: >
+  B2B invoice recovery engine with dispute recognition, promise-to-pay grace periods,
+  and dedicated account manager human escalation paths.
+
+eligible_root_causes:
+  - GENUINE_DISPUTE
+  - FORGOT_PAYMENT
+  - CASH_FLOW_DELAY
+
+constraints:
+  min_trust_score: 0.3
+  max_contact_attempts_allowed: 3
+  cooldown_hours: 24
+  quiet_hours:
+    enabled: true
+    start_hour: 9    # 09:00 AM local time
+    end_hour: 18     # 06:00 PM local time (strict B2B business hours)
+  circuit_breaker:
+    category: b2b_receivables
+    max_failure_rate: 0.10
+    max_opt_out_rate: 0.04
+    rolling_window_size: 15
+
+fatigue_scoring:
+  email_fatigue: 0.5
+  sms_fatigue: 1.0
+  voice_fatigue: 2.5
+  human_escalation_fatigue: 0.0
+
+escalation_steps:
+  - step: 1
+    root_cause_match: GENUINE_DISPUTE
+    action_type: escalate_to_account_manager
+    channel: internal_crm_ticket
+    delay_minutes: 0
+    description: "DISPUTE STOP RULE: Pause all collections and assign priority ticket to Account Manager"
+    template: "CRITICAL: Invoice {invoice_number} (INR {amount}) disputed by {customer_name}. Reason: {dispute_reason}. Automated outreach suspended."
+    requires_customer_interaction: false
+
+  - step: 1
+    root_cause_match: CASH_FLOW_DELAY
+    action_type: register_promise_to_pay
+    channel: email
+    delay_minutes: 0
+    description: "Accept 10-day extension, record Promise-to-Pay, and freeze reminders until grace window ends"
+    template: "Dear {customer_name}, we have noted your payment extension for Invoice {invoice_number} (INR {amount}). Payment link: {payment_url}"
+    requires_customer_interaction: true
+
+  - step: 1
+    root_cause_match: FORGOT_PAYMENT
+    action_type: polite_invoice_reminder
+    channel: email
+    delay_minutes: 0
+    description: "Formal B2B statement and 1-click NEFT/RTGS payment link"
+    template: "Dear {customer_name}, this is a gentle reminder regarding overdue Invoice {invoice_number} for INR {amount}. Please review details: {payment_url}"
+    requires_customer_interaction: true
