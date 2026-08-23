@@ -289,10 +289,8 @@ if "batch_results" not in st.session_state:
         }
 
 if "pipeline" not in st.session_state:
-    # Dedicated pipeline instance with cleanly isolated seed promises
     p = CloseLoopPipeline()
     now_seed = datetime.now()
-    # Seed promises with isolated IDs so they NEVER collide with demo scenarios
     p.promise_tracker.set_trust_score("cust_seed_enterprise", 0.90)
     p.promise_tracker.set_trust_score("cust_seed_retail", 0.85)
     p.promise_tracker.record_promise(
@@ -387,7 +385,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4 PRIMARY HERO KPI CARDS (Framed around winning ROI and equal-budget comparison)
+# 4 PRIMARY HERO KPI CARDS
 k1, k2, k3, k4 = st.columns(4)
 
 roi_val = bench["closeloop"]["recovery_per_contact"]
@@ -461,7 +459,6 @@ if st.session_state["app_mode"] == "🎬 Guided Demo":
             st.session_state["guided_step"] += 1
             st.rerun()
 
-    # Step Narrations
     step_narrations = {
         1: "<strong>Step 1: The Clean Happy Path (Bank Downtime)</strong><br><em>Here's a normal failed payment coming in. HDFC bank is lagging. Watch CloseLoop diagnose cluster downtime and choose a silent background retry — zero spam or calls to the customer!</em>",
         2: "<strong>Step 2: The Restraint Test (Honoring a Promise to Pay)</strong><br><em>Now here's a payment reminder due, but this customer already promised to pay on Friday. Watch CloseLoop honor the grace window and intentionally hold back!</em>",
@@ -477,10 +474,8 @@ if st.session_state["app_mode"] == "🎬 Guided Demo":
 # TAB RENDERERS (Clean separation with One-Line Captions)
 # ==============================================================================
 
-# Setup active tabs based on mode
 if st.session_state["app_mode"] == "🎬 Guided Demo":
     active_tab_idx = st.session_state["guided_step"] - 1
-    # We display the single active step content directly
 else:
     active_tab_idx = None
 
@@ -490,7 +485,8 @@ tab_names = [
     "📊 Benchmark & Tradeoff Frontier",
     "🛡️ Circuit Breakers & 2am Breakers",
     "📜 Immutable Audit Log Ledger",
-    "🤝 Promise-to-Pay & Trust Loop"
+    "🤝 Promise-to-Pay & Trust Loop",
+    "🏛️ System Architecture Deep-Dive"
 ]
 
 if active_tab_idx is None:
@@ -500,7 +496,7 @@ else:
 
 
 # ------------------------------------------------------------------------------
-# TAB 1: LIVE AI OPERATIONS CONSOLE
+# TAB 1: LIVE AI OPERATIONS CONSOLE (WITH CUSTOM WEBHOOK BUILDER)
 # ------------------------------------------------------------------------------
 if active_tab_idx in [None, 0]:
     container = tabs[0] if active_tab_idx is None else tabs[0]
@@ -508,176 +504,216 @@ if active_tab_idx in [None, 0]:
         st.subheader("⚡ Live AI Operations Console")
         st.markdown("*Test individual failed transactions live to see CloseLoop diagnose root causes, check compliance gates, and pick the least intrusive recovery action.*")
 
-        # SPOILER-FREE RAW TELEMETRY OPTIONS (Clean dedicated IDs)
-        raw_event_options = [
-            "Event #1 (Clean Happy Path): Payment failed — ₹4,999 — HDFC Netbanking — Gateway Timeout (504)",
-            "Event #2: Checkout abandoned — ₹2,499 — Step: OTP Screen — 3 Validation Errors",
-            "Event #3: Checkout dropped — ₹8,999 — Session duration: 8s — Cart initial view",
-            "Event #4: Subscription renewal failed — ₹1,999 — UPI Autopay — Validity ended",
-            "Event #5: B2B Invoice overdue — ₹145,000 — 14 days overdue — Dispute note attached",
-            "Event #6: Payment failed — ₹3,500 — UPI — Timestamp: 03:14 IST (Customer Local Night)",
-            "Event #7: Payment retry requested — ₹4,200 — 5 prior contact attempts in past 7d",
-            "Event #8 (Override Test): Payment reminder due — but customer already promised to pay by Friday (tests grace override)",
-        ]
+        mode_console = st.radio(
+            "Select Input Mode:",
+            ["📋 Select from Realistic Production Presets", "🛠️ Build & Inject Custom Webhook Payload"],
+            horizontal=True
+        )
 
-        default_idx = 0 if active_tab_idx != 1 else 7  # If guided step 2, auto-select event 8
-        selected_raw = st.selectbox("Select Raw Incoming Transaction Event:", raw_event_options, index=default_idx)
+        if "Presets" in mode_console:
+            raw_event_options = [
+                "Event #1 (Clean Happy Path): Payment failed — ₹4,999 — HDFC Netbanking — Gateway Timeout (504)",
+                "Event #2: Checkout abandoned — ₹2,499 — Step: OTP Screen — 3 Validation Errors",
+                "Event #3: Checkout dropped — ₹8,999 — Session duration: 8s — Cart initial view",
+                "Event #4: Subscription renewal failed — ₹1,999 — UPI Autopay — Validity ended",
+                "Event #5: B2B Invoice overdue — ₹145,000 — 14 days overdue — Dispute note attached",
+                "Event #6: Payment failed — ₹3,500 — UPI — Timestamp: 03:14 IST (Customer Local Night)",
+                "Event #7: Payment retry requested — ₹4,200 — 5 prior contact attempts in past 7d",
+                "Event #8 (Override Test): Payment reminder due — but customer already promised to pay by Friday (tests grace override)",
+            ]
 
-        # Build dedicated clean events
-        if "Event #1" in selected_raw:
+            default_idx = 0 if active_tab_idx != 1 else 7
+            selected_raw = st.selectbox("Select Raw Incoming Transaction Event:", raw_event_options, index=default_idx)
+
+            if "Event #1" in selected_raw:
+                event_payload = {
+                    "event_id": f"evt_bank_{int(time.time())}",
+                    "event_type": "payment_failure",
+                    "customer_id": "cust_clean_bank_01",
+                    "customer_name": "Aarav Sharma",
+                    "customer_email": "aarav@example.com",
+                    "customer_phone": "+919876543210",
+                    "customer_timezone": "Asia/Kolkata",
+                    "amount": 4999.0,
+                    "currency": "INR",
+                    "timestamp": datetime.now().isoformat(),
+                    "payment_method": "netbanking",
+                    "bank": "HDFC",
+                    "error_code": "GATEWAY_TIMEOUT",
+                    "error_message": "Bank server HDFC unresponsive (504)",
+                    "gateway_latency_ms": 6200,
+                    "historical_trust_score": 0.85,
+                    "contact_count_last_7d": 0,
+                    "metadata": {"bank_system_status": "DEGRADED", "concurrent_failures_in_cluster": 34}
+                }
+            elif "Event #2" in selected_raw:
+                event_payload = {
+                    "event_id": f"evt_checkout_{int(time.time())}",
+                    "event_type": "checkout_abandonment",
+                    "customer_id": "cust_clean_otp_02",
+                    "customer_name": "Pooja Patel",
+                    "customer_email": "pooja@example.com",
+                    "customer_phone": "+919876543211",
+                    "customer_timezone": "Asia/Kolkata",
+                    "amount": 2499.0,
+                    "currency": "INR",
+                    "timestamp": datetime.now().isoformat(),
+                    "payment_method": "checkout_page",
+                    "error_code": "OTP_SUBMISSION_FAILED",
+                    "error_message": "Customer faced 3 consecutive OTP validation errors",
+                    "historical_trust_score": 0.75,
+                    "contact_count_last_7d": 0,
+                    "metadata": {"checkout_step": "payment_otp_screen", "form_validation_errors": 3, "session_duration_seconds": 240}
+                }
+            elif "Event #3" in selected_raw:
+                event_payload = {
+                    "event_id": f"evt_window_{int(time.time())}",
+                    "event_type": "checkout_abandonment",
+                    "customer_id": "cust_clean_window_03",
+                    "customer_name": "Vikram Singh",
+                    "customer_email": "vikram@example.com",
+                    "customer_phone": "+919876543212",
+                    "customer_timezone": "Asia/Kolkata",
+                    "amount": 8999.0,
+                    "currency": "INR",
+                    "timestamp": datetime.now().isoformat(),
+                    "payment_method": "checkout_page",
+                    "error_code": "WINDOW_SHOPPING",
+                    "error_message": "Abandoned in under 10s without filling shipping details",
+                    "historical_trust_score": 0.50,
+                    "contact_count_last_7d": 0,
+                    "metadata": {"dwell_time_seconds": 8, "shipping_address_filled": False}
+                }
+            elif "Event #4" in selected_raw:
+                event_payload = {
+                    "event_id": f"evt_mandate_{int(time.time())}",
+                    "event_type": "subscription_renewal",
+                    "customer_id": "cust_clean_mandate_04",
+                    "customer_name": "Sneha Reddy",
+                    "customer_email": "sneha@example.com",
+                    "customer_phone": "+919876543213",
+                    "customer_timezone": "Asia/Kolkata",
+                    "amount": 1999.0,
+                    "currency": "INR",
+                    "timestamp": datetime.now().isoformat(),
+                    "payment_method": "upi_autopay",
+                    "bank": "ICICI",
+                    "error_code": "MANDATE_MAX_VALIDITY_EXCEEDED",
+                    "error_message": "UPI Autopay mandate validity ended",
+                    "historical_trust_score": 0.90,
+                    "contact_count_last_7d": 0,
+                    "metadata": {"mandate_id": "man_883921", "plan_name": "Pro Annual SaaS"}
+                }
+            elif "Event #5" in selected_raw:
+                event_payload = {
+                    "event_id": f"evt_b2b_{int(time.time())}",
+                    "event_type": "b2b_receivables",
+                    "customer_id": "cust_clean_dispute_05",
+                    "customer_name": "Acme Technologies Pvt Ltd",
+                    "customer_email": "finance@acme.example",
+                    "customer_phone": "+919876543214",
+                    "customer_timezone": "Asia/Kolkata",
+                    "amount": 145000.0,
+                    "currency": "INR",
+                    "timestamp": datetime.now().isoformat(),
+                    "payment_method": "neft_rtgs_invoice",
+                    "error_code": "INVOICE_DISPUTED",
+                    "error_message": "Milestone #3 deliverable pending signoff",
+                    "historical_trust_score": 0.88,
+                    "contact_count_last_7d": 1,
+                    "metadata": {"invoice_number": "INV-2026-9812", "dispute_flag": True, "dispute_reason": "Milestone #3 deliverable pending signoff"}
+                }
+            elif "Event #6" in selected_raw:
+                event_payload = {
+                    "event_id": f"evt_night_{int(time.time())}",
+                    "event_type": "payment_failure",
+                    "customer_id": "cust_clean_night_06",
+                    "customer_name": "Rahul Verma",
+                    "customer_email": "rahul@example.com",
+                    "customer_phone": "+919876543215",
+                    "customer_timezone": "Asia/Kolkata",
+                    "amount": 3500.0,
+                    "currency": "INR",
+                    "timestamp": "2026-08-23T21:30:00+00:00",
+                    "payment_method": "upi",
+                    "error_code": "INSUFFICIENT_FUNDS",
+                    "error_message": "Balance not available",
+                    "historical_trust_score": 0.70,
+                    "contact_count_last_7d": 0,
+                    "metadata": {}
+                }
+            elif "Event #7" in selected_raw:
+                event_payload = {
+                    "event_id": f"evt_fatigue_{int(time.time())}",
+                    "event_type": "checkout_abandonment",
+                    "customer_id": "cust_clean_fatigued_07",
+                    "customer_name": "Karan Malhotra",
+                    "customer_email": "karan@example.com",
+                    "customer_phone": "+919876543216",
+                    "customer_timezone": "Asia/Kolkata",
+                    "amount": 4200.0,
+                    "currency": "INR",
+                    "timestamp": datetime.now().isoformat(),
+                    "payment_method": "checkout_page",
+                    "error_code": "PRICE_HESITATION",
+                    "error_message": "Attempted promo code 'SAVE30'",
+                    "historical_trust_score": 0.40,
+                    "contact_count_last_7d": 5,
+                    "metadata": {"coupon_attempted": "SAVE30", "dwell_time_seconds": 320}
+                }
+            else:
+                event_payload = {
+                    "event_id": f"evt_grace_{int(time.time())}",
+                    "event_type": "payment_failure",
+                    "customer_id": "cust_promise_hold_08",
+                    "customer_name": "Sneha Reddy (Committed Payment on File)",
+                    "customer_email": "sneha.committed@example.com",
+                    "customer_phone": "+919876543217",
+                    "customer_timezone": "Asia/Kolkata",
+                    "amount": 4999.0,
+                    "currency": "INR",
+                    "timestamp": datetime.now().isoformat(),
+                    "payment_method": "upi",
+                    "error_code": "INSUFFICIENT_FUNDS",
+                    "error_message": "Balance not available",
+                    "historical_trust_score": 0.85,
+                    "contact_count_last_7d": 1,
+                    "metadata": {}
+                }
+        else:
+            # CUSTOM WEBHOOK BUILDER (Recruiter Magnet Feature!)
+            st.markdown("#### 🛠️ Custom Webhook Payload Builder")
+            st.caption("Input any custom customer, transaction amount, and failure parameters to test the generalization of CloseLoop:")
+
+            c_c1, c_c2, c_c3 = st.columns(3)
+            with c_c1:
+                custom_name = st.text_input("Customer Name:", value="Rohan Mehta")
+                custom_amount = st.number_input("Transaction Amount (INR):", min_value=10.0, value=7500.0, step=100.0)
+            with c_c2:
+                custom_type = st.selectbox("Event Stream Type:", ["payment_failure", "checkout_abandonment", "subscription_renewal", "b2b_receivables"])
+                custom_err = st.selectbox("Failure Error Code:", ["GATEWAY_TIMEOUT", "OTP_SUBMISSION_FAILED", "INSUFFICIENT_FUNDS", "MANDATE_MAX_VALIDITY_EXCEEDED", "INVOICE_DISPUTED", "WINDOW_SHOPPING"])
+            with c_c3:
+                custom_tz = st.selectbox("Customer Timezone:", ["Asia/Kolkata", "America/New_York", "Europe/London", "Asia/Dubai"])
+                custom_trust = st.slider("Historical Trust Score:", min_value=0.1, max_value=1.0, value=0.8, step=0.05)
+
             event_payload = {
-                "event_id": f"evt_bank_{int(time.time())}",
-                "event_type": "payment_failure",
-                "customer_id": "cust_clean_bank_01",
-                "customer_name": "Aarav Sharma",
-                "customer_email": "aarav@example.com",
-                "customer_phone": "+919876543210",
-                "customer_timezone": "Asia/Kolkata",
-                "amount": 4999.0,
+                "event_id": f"evt_custom_{int(time.time())}",
+                "event_type": custom_type,
+                "customer_id": f"cust_custom_{abs(hash(custom_name))%10000}",
+                "customer_name": custom_name,
+                "customer_email": f"{custom_name.lower().replace(' ', '.')}@example.com",
+                "customer_phone": "+919811223344",
+                "customer_timezone": custom_tz,
+                "amount": float(custom_amount),
                 "currency": "INR",
                 "timestamp": datetime.now().isoformat(),
-                "payment_method": "netbanking",
-                "bank": "HDFC",
-                "error_code": "GATEWAY_TIMEOUT",
-                "error_message": "Bank server HDFC unresponsive (504)",
-                "gateway_latency_ms": 6200,
-                "historical_trust_score": 0.85,
+                "payment_method": "upi" if "payment" in custom_type else "checkout_page",
+                "bank": "HDFC" if custom_err == "GATEWAY_TIMEOUT" else "SBI",
+                "error_code": custom_err,
+                "error_message": f"Custom error: {custom_err}",
+                "historical_trust_score": custom_trust,
                 "contact_count_last_7d": 0,
-                "metadata": {"bank_system_status": "DEGRADED", "concurrent_failures_in_cluster": 34}
-            }
-        elif "Event #2" in selected_raw:
-            event_payload = {
-                "event_id": f"evt_checkout_{int(time.time())}",
-                "event_type": "checkout_abandonment",
-                "customer_id": "cust_clean_otp_02",
-                "customer_name": "Pooja Patel",
-                "customer_email": "pooja@example.com",
-                "customer_phone": "+919876543211",
-                "customer_timezone": "Asia/Kolkata",
-                "amount": 2499.0,
-                "currency": "INR",
-                "timestamp": datetime.now().isoformat(),
-                "payment_method": "checkout_page",
-                "error_code": "OTP_SUBMISSION_FAILED",
-                "error_message": "Customer faced 3 consecutive OTP validation errors",
-                "historical_trust_score": 0.75,
-                "contact_count_last_7d": 0,
-                "metadata": {"checkout_step": "payment_otp_screen", "form_validation_errors": 3, "session_duration_seconds": 240}
-            }
-        elif "Event #3" in selected_raw:
-            event_payload = {
-                "event_id": f"evt_window_{int(time.time())}",
-                "event_type": "checkout_abandonment",
-                "customer_id": "cust_clean_window_03",
-                "customer_name": "Vikram Singh",
-                "customer_email": "vikram@example.com",
-                "customer_phone": "+919876543212",
-                "customer_timezone": "Asia/Kolkata",
-                "amount": 8999.0,
-                "currency": "INR",
-                "timestamp": datetime.now().isoformat(),
-                "payment_method": "checkout_page",
-                "error_code": "WINDOW_SHOPPING",
-                "error_message": "Abandoned in under 10s without filling shipping details",
-                "historical_trust_score": 0.50,
-                "contact_count_last_7d": 0,
-                "metadata": {"dwell_time_seconds": 8, "shipping_address_filled": False}
-            }
-        elif "Event #4" in selected_raw:
-            event_payload = {
-                "event_id": f"evt_mandate_{int(time.time())}",
-                "event_type": "subscription_renewal",
-                "customer_id": "cust_clean_mandate_04",
-                "customer_name": "Sneha Reddy",
-                "customer_email": "sneha@example.com",
-                "customer_phone": "+919876543213",
-                "customer_timezone": "Asia/Kolkata",
-                "amount": 1999.0,
-                "currency": "INR",
-                "timestamp": datetime.now().isoformat(),
-                "payment_method": "upi_autopay",
-                "bank": "ICICI",
-                "error_code": "MANDATE_MAX_VALIDITY_EXCEEDED",
-                "error_message": "UPI Autopay mandate validity ended",
-                "historical_trust_score": 0.90,
-                "contact_count_last_7d": 0,
-                "metadata": {"mandate_id": "man_883921", "plan_name": "Pro Annual SaaS"}
-            }
-        elif "Event #5" in selected_raw:
-            event_payload = {
-                "event_id": f"evt_b2b_{int(time.time())}",
-                "event_type": "b2b_receivables",
-                "customer_id": "cust_clean_dispute_05",
-                "customer_name": "Acme Technologies Pvt Ltd",
-                "customer_email": "finance@acme.example",
-                "customer_phone": "+919876543214",
-                "customer_timezone": "Asia/Kolkata",
-                "amount": 145000.0,
-                "currency": "INR",
-                "timestamp": datetime.now().isoformat(),
-                "payment_method": "neft_rtgs_invoice",
-                "error_code": "INVOICE_DISPUTED",
-                "error_message": "Milestone #3 deliverable pending signoff",
-                "historical_trust_score": 0.88,
-                "contact_count_last_7d": 1,
-                "metadata": {"invoice_number": "INV-2026-9812", "dispute_flag": True, "dispute_reason": "Milestone #3 deliverable pending signoff"}
-            }
-        elif "Event #6" in selected_raw:
-            event_payload = {
-                "event_id": f"evt_night_{int(time.time())}",
-                "event_type": "payment_failure",
-                "customer_id": "cust_clean_night_06",
-                "customer_name": "Rahul Verma",
-                "customer_email": "rahul@example.com",
-                "customer_phone": "+919876543215",
-                "customer_timezone": "Asia/Kolkata",
-                "amount": 3500.0,
-                "currency": "INR",
-                "timestamp": "2026-08-23T21:30:00+00:00",
-                "payment_method": "upi",
-                "error_code": "INSUFFICIENT_FUNDS",
-                "error_message": "Balance not available",
-                "historical_trust_score": 0.70,
-                "contact_count_last_7d": 0,
-                "metadata": {}
-            }
-        elif "Event #7" in selected_raw:
-            event_payload = {
-                "event_id": f"evt_fatigue_{int(time.time())}",
-                "event_type": "checkout_abandonment",
-                "customer_id": "cust_clean_fatigued_07",
-                "customer_name": "Karan Malhotra",
-                "customer_email": "karan@example.com",
-                "customer_phone": "+919876543216",
-                "customer_timezone": "Asia/Kolkata",
-                "amount": 4200.0,
-                "currency": "INR",
-                "timestamp": datetime.now().isoformat(),
-                "payment_method": "checkout_page",
-                "error_code": "PRICE_HESITATION",
-                "error_message": "Attempted promo code 'SAVE30'",
-                "historical_trust_score": 0.40,
-                "contact_count_last_7d": 5,
-                "metadata": {"coupon_attempted": "SAVE30", "dwell_time_seconds": 320}
-            }
-        else:  # Event #8 - Dedicated Promise Grace Override test
-            event_payload = {
-                "event_id": f"evt_grace_{int(time.time())}",
-                "event_type": "payment_failure",
-                "customer_id": "cust_promise_hold_08",  # Matches seeded promise!
-                "customer_name": "Sneha Reddy (Committed Payment on File)",
-                "customer_email": "sneha.committed@example.com",
-                "customer_phone": "+919876543217",
-                "customer_timezone": "Asia/Kolkata",
-                "amount": 4999.0,
-                "currency": "INR",
-                "timestamp": datetime.now().isoformat(),
-                "payment_method": "upi",
-                "error_code": "INSUFFICIENT_FUNDS",
-                "error_message": "Balance not available",
-                "historical_trust_score": 0.85,
-                "contact_count_last_7d": 1,
-                "metadata": {}
+                "metadata": {"bank_system_status": "DEGRADED" if custom_err == "GATEWAY_TIMEOUT" else "HEALTHY"}
             }
 
         with st.expander("📥 View Raw Incoming Webhook Data (JSON Telemetry)", expanded=False):
@@ -694,7 +730,6 @@ if active_tab_idx in [None, 0]:
             placeholder_s1.markdown("<div class='plain-english-box'>📥 <strong>Step 1: Normalizing Ingestion</strong>... parsing amount, currency, and customer timezone...</div>", unsafe_allow_html=True)
             time.sleep(0.35)
 
-            # Ingest event
             ev_obj = ingest_event(event_payload)
             placeholder_s1.markdown(f"""
             <div class='plain-english-box'>
@@ -759,12 +794,10 @@ if active_tab_idx in [None, 0]:
                 </div>
                 """, unsafe_allow_html=True)
 
-            # Update Session stats
             stats["events_processed"] += 1
             stats["revenue_recovered"] += run_res.get("estimated_revenue_recovered", 0.0)
             stats["fatigue_incurred"] += exec_res.get("fatigue_score_incurred", 0.0)
 
-            # Render Channel Action Preview
             st_status = exec_res["status"]
             chan = exec_res["channel"]
 
@@ -789,7 +822,8 @@ if active_tab_idx in [None, 0]:
                     placeholder_action.markdown(f"""
                     <h4>🎙️ Step 5: Hinglish Conversational Voice Bot Call Transcript</h4>
                     <div class="voice-card">
-                        <strong>📞 Outbound Voice Call to {ev_obj.customer_name} ({ev_obj.customer_phone}):</strong><br><br>
+                        <strong>📞 Outbound Voice Call to {ev_obj.customer_name} ({ev_obj.customer_phone}):</strong><br>
+                        <em>Simulated Audio Playback: 🔊 00:14 / 00:45 [▶️ Playing]</em><br><br>
                         {exec_res['rendered_message']}
                     </div>
                     """, unsafe_allow_html=True)
@@ -836,7 +870,6 @@ if active_tab_idx in [None, 1]:
         with col_btn:
             start_sim = st.button("▶️ Stream 20 Live Transactions", type="primary")
 
-        # Running Metrics Live Bar
         c_live_rec, c_live_fatigue, c_live_attempts, c_live_violations = st.columns(4)
         live_rec_ph = c_live_rec.empty()
         live_fatigue_ph = c_live_fatigue.empty()
@@ -874,7 +907,6 @@ if active_tab_idx in [None, 1]:
                 if ex.get("channel") not in ["backend_scheduler", "none"]:
                     running_attempts += 1
 
-                # Icon checkmark code
                 if rec_val > 0 and ex.get("channel") != "backend_scheduler":
                     outcome_label = "✅ Recovered (WhatsApp/SMS)"
                 elif ex.get("channel") == "backend_scheduler":
@@ -896,7 +928,6 @@ if active_tab_idx in [None, 1]:
                     "Fatigue": f"{fat_val:.1f} pts",
                 })
 
-                # Update live meters
                 live_rec_ph.metric("Live ₹ Recovered", f"₹{running_recovered:,.0f}")
                 live_fatigue_ph.metric("Live Fatigue Incurred", f"{running_fatigue:.1f} pts")
                 live_attempts_ph.metric("Live Contacts Expended", f"{running_attempts}")
@@ -921,7 +952,6 @@ if active_tab_idx in [None, 2]:
         st.markdown("<span class='badge-pill-indigo'>Scope: Canonical 200-Event Held-out Benchmark Batch</span>", unsafe_allow_html=True)
         st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
 
-        # INTERACTIVE SLIDER (Part 4)
         st.markdown("#### 🎚️ Interactive Fatigue Budget Explorer")
         st.caption("Drag the slider to test different customer disruption limits and observe the diminishing-returns curve in real time.")
         
@@ -935,9 +965,8 @@ if active_tab_idx in [None, 2]:
 
         total_risk_val = bench["closeloop"]["total_revenue_at_risk"]
         
-        # Dynamic recalculation based on slider
         if user_fatigue_budget == 0:
-            dyn_rec_pct = 0.28  # Silent retries alone recover 28%!
+            dyn_rec_pct = 0.28
             dyn_rec_val = total_risk_val * dyn_rec_pct
             dyn_explanation = f"At a budget cap of <strong>0 fatigue points</strong>, CloseLoop recovers <strong>₹{dyn_rec_val:,.0f} (28.0%)</strong> entirely through silent gateway retries with ZERO customer disruption."
         else:
@@ -955,7 +984,6 @@ if active_tab_idx in [None, 2]:
             
             fig = go.Figure()
             
-            # Base curve
             fig.add_trace(go.Scatter(
                 x=df_tradeoff["fatigue_score"],
                 y=df_tradeoff["revenue_recovered"],
@@ -966,7 +994,6 @@ if active_tab_idx in [None, 2]:
                 hovertemplate="Fatigue Score: %{x}<br>Revenue Recovered: ₹%{y:,.0f}<extra></extra>"
             ))
 
-            # Dynamic Interactive Slider Point
             fig.add_trace(go.Scatter(
                 x=[user_fatigue_budget],
                 y=[dyn_rec_val],
@@ -975,7 +1002,6 @@ if active_tab_idx in [None, 2]:
                 marker=dict(size=14, color="#16A34A", symbol="star")
             ))
 
-            # Shaded Green Zone
             fig.add_vrect(
                 x0=0, x1=60,
                 fillcolor="#DCFCE7", opacity=0.35,
@@ -984,7 +1010,6 @@ if active_tab_idx in [None, 2]:
                 annotation_position="top left"
             )
 
-            # Shaded Red Zone
             fig.add_vrect(
                 x0=120, x1=240,
                 fillcolor="#FEE2E2", opacity=0.35,
@@ -1086,7 +1111,7 @@ if active_tab_idx in [None, 3]:
 
 
 # ------------------------------------------------------------------------------
-# TAB 5: IMMUTABLE AUDIT LOG LEDGER
+# TAB 5: IMMUTABLE AUDIT LOG LEDGER (WITH ONE-CLICK EXPORT)
 # ------------------------------------------------------------------------------
 if active_tab_idx in [None, 4]:
     container = tabs[4] if active_tab_idx is None else tabs[4]
@@ -1099,6 +1124,16 @@ if active_tab_idx in [None, 4]:
         if not entries:
             st.info("No audit logs recorded yet in this session. Run a scenario in the Live Console to stream logs here!")
         else:
+            col_d1, col_d2 = st.columns([1, 4])
+            with col_d1:
+                st.download_button(
+                    "📥 Export Audit Ledger (JSON)",
+                    data=json.dumps(entries, indent=2),
+                    file_name=f"closeloop_rbi_audit_log_{int(time.time())}.json",
+                    mime="application/json",
+                    type="primary"
+                )
+
             df_audit = pd.DataFrame(entries)
             st.dataframe(
                 df_audit[["entry_id", "timestamp", "customer_name", "stage", "action_type", "status", "explanation"]],
@@ -1185,3 +1220,50 @@ if active_tab_idx in [None, 5]:
                 <em>"Trust score reduced below Tier 2 (<0.65). Future payment extensions for this customer will be restricted to 0h grace, and subsequent overdue invoices will immediately trigger formal Account Manager escalation, per <code>playbook_selector.py</code> tiering."</em>
             </div>
             """, unsafe_allow_html=True)
+
+
+# ------------------------------------------------------------------------------
+# TAB 7: SYSTEM ARCHITECTURE & ENGINEERING DEEP-DIVE (Recruiter Magnet!)
+# ------------------------------------------------------------------------------
+if active_tab_idx in [None, 6]:
+    container = tabs[6] if active_tab_idx is None else tabs[6]
+    with container:
+        st.subheader("🏛️ Systems Architecture & Distributed Safety Architecture")
+        st.markdown("*A deep-dive into the 5-tier pipeline architecture, distributed state machines, and mathematical safety proofs powering CloseLoop.*")
+
+        st.markdown("""
+        ```mermaid
+        graph TD
+            A[Incoming Telemetry Stream] --> B(Ingestion Engine: Normalization & Timezone Localizer)
+            B --> C{Diagnosis Engine: Heuristics + Feature Classifier}
+            C --> D[Playbook Selector: YAML Policy Registry]
+            D --> E{Engineering Safety Gates}
+            E -->|Lock Acquired| E1[SHA-256 Idempotency Lock]
+            E -->|09:00 - 19:00 Local| E2[Customer Timezone Quiet-Hours Gate]
+            E -->|Opt-outs < 15%| E3[Distributed Circuit Breaker]
+            E -->|Budget Remaining| E4[Customer Fatigue Budget Tracker]
+            E1 & E2 & E3 & E4 --> F[Execution Agent: Multi-Channel Dispatcher]
+            F --> G1[Silent Secondary Banking Retry]
+            F --> G2[WhatsApp 1-Tap Recovery Link]
+            F --> G3[Conversational Hinglish Voice Bot]
+            F --> G4[Restraint Stop Rule / Internal CRM]
+            F --> H[(Immutable Cryptographic Audit Ledger)]
+            H --> I[Promise-to-Pay & Dynamic Trust Feedback Loop]
+            I -.->|Updates Historical Trust| C
+        ```
+        """)
+
+        st.markdown("### 🧩 Technical Specifications & Distributed Invariants")
+        a1, a2, a3 = st.columns(3)
+        with a1:
+            st.markdown("##### 1. Idempotency Lock Key")
+            st.code("SHA256(event_id : customer_id : action_type : amount)", language="python")
+            st.caption("Guarantees that concurrent retry storms across distributed workers execute at most once.")
+        with a2:
+            st.markdown("##### 2. Timezone Quiet-Hours")
+            st.code("09:00 <= customer_tz.now().hour < 19:00", language="python")
+            st.caption("Converts UTC server timestamps into customer local time to strictly enforce RBI compliance.")
+        with a3:
+            st.markdown("##### 3. Dynamic Trust Score Delta")
+            st.code("Kept: +0.12 | Missed: -0.25", language="python")
+            st.caption("Asymmetric penalty gradient modeling human creditworthiness and commitment fulfillment.")
